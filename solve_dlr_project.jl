@@ -19,6 +19,14 @@ lmps = DataFrame(transpose(hcat(lmps...)));
 CSV.write("D:/papers/lmps.csv", lmps)
 
 
+g = result["solution"]["gen"]
+
+gens = [[parse(Int,k), g[k]["pg"]] for k in keys(g)];
+gens = DataFrame(transpose(hcat(gens...)));
+CSV.write("D:/papers/gens.csv", gens)
+
+
+
 result["solution"]["branch"]
 
 
