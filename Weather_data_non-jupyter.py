@@ -59,7 +59,7 @@ east_box = buses.lon.max() + 1
 # Hour counter
 h = 0
 
-for date in pd.date_range(start='2016-2-2', end='2017-1-1', freq='D'):
+for date in pd.date_range(start='2016-2-1', end='2016-2-29', freq='D'):
     print(date, end=' ')
     hrs = avail_hours(date.year, date.month, date.day)
     print(len(hrs))
@@ -150,7 +150,7 @@ for date in pd.date_range(start='2016-2-2', end='2017-1-1', freq='D'):
         h += 1
         time.sleep(5)
 
-with open(r"C:\Users\vinee\OneDrive - Massachusetts Institute of Technology\MIT\Semesters\Spring 2022\15.S08\Project\weather_data_Feb-Dec2016.pkl", 'wb') as file:
+with open(r"C:\Users\vinee\OneDrive - Massachusetts Institute of Technology\MIT\Semesters\Spring 2022\15.S08\Project\weather_data_Feb2016.pkl", 'wb') as file:
     pickle.dump(x_orig_all, file)
     pickle.dump(y_orig_all, file)
     pickle.dump(temp_all, file)
