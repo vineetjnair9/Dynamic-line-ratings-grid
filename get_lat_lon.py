@@ -16,6 +16,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
+
 def avail_hours(Y, M, D):
     dt = datetime(Y, M, D)
     catalog = 'https://www.ncei.noaa.gov/thredds/catalog/model-rap130anl-old/'
@@ -24,9 +25,11 @@ def avail_hours(Y, M, D):
     reqs = requests.get(url)
     soup = BeautifulSoup(reqs.text, 'html.parser')
     hrefs = pd.Series([link.get('href') for link in soup.find_all('a')])
-    href_df = pd.DataFrame({k: hrefs[hrefs.str.contains('.grb')].str.split('_').str[k].str.split('.').str[0] for k in [-2, -1]})
-    hrs = href_df[href_df[-1]=='001'][-2].drop_duplicates().sort_values()
+    href_df = pd.DataFrame(
+        {k: hrefs[hrefs.str.contains('.grb')].str.split('_').str[k].str.split('.').str[0] for k in [-2, -1]})
+    hrs = href_df[href_df[-1] == '001'][-2].drop_duplicates().sort_values()
     return list(hrs.str[:2].astype(int))
+
 
 # Helper function for finding proper time variable
 def find_time_var(var, time_basename='time'):
@@ -35,6 +38,7 @@ def find_time_var(var, time_basename='time'):
             return coord_name
     raise ValueError('No time variable found for ' + var.name)
 
+
 # Empty dictionaries to store data at each timestep
 u_all = {}
 v_all = {}
@@ -42,6 +46,8 @@ temp_all = {}
 x_orig_all = {}
 y_orig_all = {}
 times = {}
+lat_all = {}
+lon_all = {}
 
 base_url = 'https://www.ncei.noaa.gov/thredds/ncss/model-rap130anl-old/'
 
@@ -63,9 +69,9 @@ for date in pd.date_range(start='2016-12-12', end='2016-12-12', freq='D'):
     print(date, end=' ')
     hrs = avail_hours(date.year, date.month, date.day)
     print(len(hrs))
-    for hr in hrs:
+    for hr in range(1):
         dt = pd.to_datetime('{}-{}-{} {}:00'.format(date.year, date.month, date.day, hr))
-    
+
         ncss = NCSS('{}{dt:%Y%m}/{dt:%Y%m%d}/rap_130_{dt:%Y%m%d}'
                     '_{dt:%H}00_000.grb2'.format(base_url, dt=dt))
 
@@ -81,7 +87,7 @@ for date in pd.date_range(start='2016-12-12', end='2016-12-12', freq='D'):
                         'v-component_of_wind_height_above_ground')
         data = ncss.get_data(query)
 
-        filterwarnings("ignore", category=DeprecationWarning) 
+        filterwarnings("ignore", category=DeprecationWarning)
 
         # Pull out variables you want to use
         temp = units.K * data.variables['Temperature_height_above_ground'][:].squeeze()
@@ -91,6 +97,8 @@ for date in pd.date_range(start='2016-12-12', end='2016-12-12', freq='D'):
         v_wind = units('m/s') * data.variables['v-component_of_wind_height_above_ground'][:].squeeze()
         x_orig = data.variables['x'][:].squeeze()
         y_orig = data.variables['y'][:].squeeze()
+        lat = data.variables['lat'][:].squeeze()
+        lon = data.variables['lon'][:].squeeze()
         time_var = data.variables[find_time_var(data.variables['Temperature_height_above_ground'])]
 
         # Convert number of hours since the reference time into an actual date
@@ -147,14 +155,20 @@ for date in pd.date_range(start='2016-12-12', end='2016-12-12', freq='D'):
         u_all[h] = u_wind_80m
         v_all[h] = v_wind_80m
         times[h] = dt
+        lat_all[h] = lat
+        lon_all[h] = lon
 
         h += 1
         time.sleep(5)
 
-with open(r"C:\Users\vinee\OneDrive - Massachusetts Institute of Technology\MIT\Semesters\Spring 2022\15.S08\Project\weather_data_Dec2016.pkl", 'wb') as file:
+with open(
+        r"C:\Users\vinee\OneDrive - Massachusetts Institute of Technology\MIT\Semesters\Spring 2022\15.S08\Project\lat_lon_data.pkl",
+        'wb') as file:
     pickle.dump(x_orig_all, file)
     pickle.dump(y_orig_all, file)
     pickle.dump(temp_all, file)
     pickle.dump(u_all, file)
     pickle.dump(v_all, file)
     pickle.dump(times, file)
+    pickle.dump(lat_all, file)
+    pickle.dump(lon_all,file)

@@ -46,9 +46,9 @@ south_box = buses.lat.min() - 1
 west_box = buses.lon.min() - 1
 east_box = buses.lon.max() + 1
 
-months = ['Oct','Nov','Dec']
-dates_from = ['2016-10-1','2016-11-1','2016-12-1']
-dates_to = ['2016-10-31','2016-11-30','2017-1-1']
+months = ['Feb','Dec']
+dates_from = ['2016-2-1','2016-12-1']
+dates_to = ['2016-2-29','2017-1-1']
 
 for i in range(len(months)):
     # Empty dictionaries to store data at each timestep
@@ -165,7 +165,7 @@ for i in range(len(months)):
         pickle.dump(v_all, file)
         pickle.dump(times, file)
 
-    # Back track total no. of hours in each month to figure out which hour each observation corresponds too
-    months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-    days_per_month = [31,29,31,30,31,30,31,31,30,31,30,31]
-    hours_per_month = days_per_month * 60 # h indexing
+# Back track total no. of hours in each month to figure out which hour each observation corresponds too
+months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+days_per_month = [31,29,31,30,31,30,31,31,30,31,30,31]
+hours_per_month = days_per_month * 60 # h indexing
