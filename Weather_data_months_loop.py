@@ -46,9 +46,9 @@ south_box = buses.lat.min() - 1
 west_box = buses.lon.min() - 1
 east_box = buses.lon.max() + 1
 
-months = ['Jul','Aug','Sep','Oct','Nov','Dec']
-dates_from = ['2016-7-1','2016-8-1','2016-9-1','2016-10-1','2016-11-1','2016-12-1']
-dates_to = ['2016-7-31','2016-8-31','2016-9-30','2016-10-31','2016-11-30','2017-1-1']
+months = ['Oct','Nov','Dec']
+dates_from = ['2016-10-1','2016-11-1','2016-12-1']
+dates_to = ['2016-10-31','2016-11-30','2017-1-1']
 
 for i in range(len(months)):
     # Empty dictionaries to store data at each timestep
