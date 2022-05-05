@@ -17,7 +17,7 @@ grid = Grid(["Texas"])
 
 buses = grid.bus
 
-#  X and Y coordinates of buses
+#%%  X and Y coordinates of buses
 # Convert from WGS-84 (lat, lon) --> UTM projection
 result = utm.from_latlon(buses.lat.to_numpy(),buses.lon.to_numpy())
 buses['X'], buses['Y'] = result[0], result[1]
