@@ -1,0 +1,126 @@
+from netCDF4 import Dataset, num2date
+import matplotlib.pyplot as plt
+from matplotlib.cm import get_cmap
+import cartopy.crs as crs
+from cartopy.feature import NaturalEarthFeature
+from datetime import datetime
+from metpy.units import units
+import numpy as np
+from siphon.ncss import NCSS
+import utm
+from warnings import filterwarnings
+from scipy.interpolate import griddata
+from pyproj import Transformer
+import pandas as pd
+from powersimdata.input.grid import Grid
+import pickle
+from urllib.error import HTTPError
+import time
+
+from wrf import (to_np, getvar, smooth2d, get_cartopy, cartopy_xlim,
+                 cartopy_ylim, latlon_coords)
+
+# Helper function for finding proper time variable
+def find_time_var(var, time_basename='time'):
+    for coord_name in var.coordinates.split():
+        if coord_name.startswith(time_basename):
+            return coord_name
+    raise ValueError('No time variable found for ' + var.name)
+
+dt = pd.datetime(2016, 1, 1)
+
+base_url = 'https://www.ncei.noaa.gov/thredds/ncss/model-rap130anl-old/'
+
+# Find bounding box for texas interconnection
+grid = Grid(["Texas"])
+buses = grid.bus
+north_box = buses.lat.max() + 1
+south_box = buses.lat.min() - 1
+west_box = buses.lon.min() - 1
+east_box = buses.lon.max() + 1
+
+ncss = NCSS('{}{dt:%Y%m}/{dt:%Y%m%d}/rap_130_{dt:%Y%m%d}'
+            '_{dt:%H}00_000.grb2'.format(base_url, dt=dt))
+
+# Create lat/lon box for location you want to get data for
+query = ncss.query().time(dt)
+query.lonlat_box(north=north_box, south=south_box, east=east_box, west=west_box)
+query.accept('netcdf')
+query.add_lonlat(value=True)
+
+# Request data for model "surface" data
+query.variables('Temperature_height_above_ground',
+                'u-component_of_wind_height_above_ground',
+                'v-component_of_wind_height_above_ground')
+data = ncss.get_data(query)
+
+filterwarnings("ignore", category=DeprecationWarning) 
+
+# Pull out variables you want to use
+temp = units.K * data.variables['Temperature_height_above_ground'][:].squeeze()
+lev_80m_temp = np.where(data.variables['height_above_ground1'][:] == 80)[0][0]
+temp_80m = temp[lev_80m_temp]
+u_wind = units('m/s') * data.variables['u-component_of_wind_height_above_ground'][:].squeeze()
+v_wind = units('m/s') * data.variables['v-component_of_wind_height_above_ground'][:].squeeze()
+x_orig = data.variables['x'][:].squeeze()
+y_orig = data.variables['y'][:].squeeze()
+time_var = data.variables[find_time_var(data.variables['Temperature_height_above_ground'])]
+lat = data.variables['lat'][:].squeeze()
+lon = data.variables['lon'][:].squeeze()
+
+# Convert number of hours since the reference time into an actual date
+time_val = num2date(time_var[:].squeeze(), time_var.units)
+
+lev_80m_wind = np.where(data.variables['height_above_ground4'][:] == 80)[0][0]
+u_wind_80m = u_wind[lev_80m_wind]
+v_wind_80m = v_wind[lev_80m_wind]
+
+# Open the NetCDF file
+ncfile = Dataset("wrfout_d01_2016-10-07_00_00_00")
+
+# Get the sea level pressure
+slp = getvar(ncfile, "slp")
+
+# Smooth the sea level pressure since it tends to be noisy near the
+# mountains
+smooth_slp = smooth2d(slp, 3, cenweight=4)
+
+# Get the latitude and longitude points
+lats, lons = latlon_coords(slp)
+
+# Get the cartopy mapping object
+cart_proj = get_cartopy(slp)
+
+# Create a figure
+fig = plt.figure(figsize=(12,6))
+# Set the GeoAxes to the projection used by WRF
+ax = plt.axes(projection=cart_proj)
+
+# Download and add the states and coastlines
+states = NaturalEarthFeature(category="cultural", scale="50m",
+                             facecolor="none",
+                             name="admin_1_states_provinces_shp")
+ax.add_feature(states, linewidth=.5, edgecolor="black")
+ax.coastlines('50m', linewidth=0.8)
+
+# Make the contour outlines and filled contours for the smoothed sea level
+# pressure.
+plt.contour(to_np(lons), to_np(lats), to_np(smooth_slp), 10, colors="black",
+            transform=crs.PlateCarree())
+plt.contourf(to_np(lons), to_np(lats), to_np(smooth_slp), 10,
+             transform=crs.PlateCarree(),
+             cmap=get_cmap("jet"))
+
+# Add a color bar
+plt.colorbar(ax=ax, shrink=.98)
+
+# Set the map bounds
+ax.set_xlim(cartopy_xlim(smooth_slp))
+ax.set_ylim(cartopy_ylim(smooth_slp))
+
+# Add the gridlines
+ax.gridlines(color="black", linestyle="dotted")
+
+plt.title("Sea Level Pressure (hPa)")
+
+plt.show()

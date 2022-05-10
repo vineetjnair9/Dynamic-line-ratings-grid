@@ -53,13 +53,10 @@ south_box = buses.lat.min() - 1
 west_box = buses.lon.min() - 1
 east_box = buses.lon.max() + 1
 
-# Loop through all times
-# times = pd.date_range(start='1/1/2016', end='1/1/2017',freq='H')
-
 # Hour counter
 h = 0
 
-for date in pd.date_range(start='2016-12-12', end='2016-12-12', freq='D'):
+for date in pd.date_range(start='2016-12-1', end='2017-1-1', freq='D'):
     print(date, end=' ')
     hrs = avail_hours(date.year, date.month, date.day)
     print(len(hrs))

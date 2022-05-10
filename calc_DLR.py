@@ -1,15 +1,19 @@
 #%% IMPORTS
+from cmath import sqrt
+from statistics import mean
 from powersimdata.input.grid import Grid
-from prereise.gather.winddata.rap import rap, helpers # impute
-
+from datetime import datetime
+from metpy.units import units
 import pandas as pd
-from matplotlib import pyplot
 import numpy as np
 import utm
 import math
 import pickle
-from pyproj import Transformer
 import utm
+import time
+
+import requests
+from bs4 import BeautifulSoup
 
 from scipy.spatial.distance import cdist
 
@@ -17,12 +21,13 @@ grid = Grid(["Texas"])
 
 buses = grid.bus
 
-#%%  X and Y coordinates of buses
+#  X and Y coordinates of buses
 # Convert from WGS-84 (lat, lon) --> UTM projection
 result = utm.from_latlon(buses.lat.to_numpy(),buses.lon.to_numpy())
 buses['X'], buses['Y'] = result[0], result[1]
 
 branches = grid.branch
+num_branches = branches.shape[0]
 
 # Assign start and end X and Y coordinates
 from_result = utm.from_latlon(branches.from_lat.to_numpy(),branches.from_lon.to_numpy())
@@ -34,7 +39,6 @@ branches['toX'], branches['toY'] = to_result[0], to_result[1]
 # Merge lists of x and y coordinates into list of coordinate pair tuples
 def merge(list1, list2):
     return list(map(lambda x, y: (x, y), list1, list2))
-
 
 def sample_points(x1, y1, x2, y2, d):
     # Start: (x1,y1)
@@ -79,14 +83,44 @@ def closest_point(point,points):
     min_index = cdist([point],points).argmin()
     return min_index, points[min_index]
 
-# Loop through all branches and store the closest weather points - Only need to do this ONCE
+def conductor_axis(branches,branch_num):
+    fromY = branches['fromY'].iloc[branch_num]
+    toY = branches['toY'].iloc[branch_num]
+    fromX = branches['fromX'].iloc[branch_num]
+    toX = branches['toX'].iloc[branch_num]
+
+    if abs(fromX - toX) < 0.1:
+        return math.pi/2 * np.sign(toY - fromY)
+    else:
+        return math.atan2(toY - fromY, toX - fromX)
+
+def wind_dir(u,v):
+    return math.atan2(v,u)
+
+def avail_hours(Y, M, D):
+    dt = datetime(Y, M, D)
+    catalog = 'https://www.ncei.noaa.gov/thredds/catalog/model-rap130anl-old/'
+    url = '{}{dt:%Y%m}/{dt:%Y%m%d}/catalog.html'.format(catalog, dt=dt)
+
+    reqs = requests.get(url)
+    soup = BeautifulSoup(reqs.text, 'html.parser')
+    hrefs = pd.Series([link.get('href') for link in soup.find_all('a')])
+    href_df = pd.DataFrame({k: hrefs[hrefs.str.contains('.grb')].str.split('_').str[k].str.split('.').str[0] for k in [-2, -1]})
+    hrs = href_df[href_df[-1]=='001'][-2].drop_duplicates().sort_values()
+    return list(hrs.str[:2].astype(int))
+
+# Load weather data
+months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+days_per_month = [31,29,31,30,31,30,31,31,30,31,30,32]
+hours_per_month = days_per_month * 24 # h indexing
+total_hours = sum(hours_per_month)
+
+#%% Loop through all branches and store the closest weather points - Only need to do this ONCE
 # Same fixed points sampled throughout
-num_branches = branches.shape[0]
 branch_weather_points = {}
 branch_weather_indices = {}
 
-mac = False
-
+mac = True
 if mac:
     file_path1 = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/weather_data_Jan2016.pkl'
 else:
@@ -126,66 +160,161 @@ result = utm.from_latlon(lat_all_array,lon_all_array)
 weather_x, weather_y = result[0], result[1]
 weather_points = merge(weather_x, weather_y)
 
-d = 1000  # units in km?
+d = 100  # units in km?
 
+# Find nearest points
 for i in range(num_branches):
     branch_sample_points = sample_points(branches.iloc[i].fromX, branches.iloc[i].fromY, branches.iloc[i].toX,
                                          branches.iloc[i].toY, d)
     branch_weather_indices[i] = [closest_point(pt, weather_points)[0] for pt in branch_sample_points]
     branch_weather_points[i] = [closest_point(pt, weather_points)[1] for pt in branch_sample_points]
 
-#%% Get subset of valid points for which we have data
-x_valid_temp = x_2d[~temp_80m.mask].ravel()
-x_valid_u = x_2d[~u_wind_80m.mask].ravel()
-x_valid_v = x_2d[~v_wind_80m.mask].ravel()
+#
+with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/branch_weather.pkl', 'wb') as file:
+    pickle.dump(branch_weather_indices, file)
+    pickle.dump(branch_weather_points, file)
 
-y_valid_temp = y_2d[~temp_80m.mask].ravel()
-y_valid_u = y_2d[~u_wind_80m.mask].ravel()
-y_valid_v = y_2d[~v_wind_80m.mask].ravel()
-
-temp_80m_valid = temp_80m[~temp_80m.mask].ravel()
-u_wind_valid = u_wind_80m[~u_wind_80m.mask].ravel()
-v_wind_valid = v_wind_80m[~v_wind_80m.mask].ravel()
-
-points_temp = np.transpose(np.vstack((x_valid_temp,y_valid_temp)))
-points_u = np.transpose(np.vstack((x_valid_u,y_valid_u)))
-points_v = np.transpose(np.vstack((x_valid_v,y_valid_v)))
-
-# Convert masked weather arrays to numpy arrays by interpolating to fill missing data points
-# interpolation methods - nearest, linear, cubic
-temp_80m_interp = griddata(points_temp, temp_80m_valid, (x_2d,y_2d), method='linear')
-u_80m_interp = griddata(points_u, u_wind_valid, (x_2d,y_2d), method='linear')
-v_80m_interp = griddata(points_v, v_wind_valid, (x_2d,y_2d), method='linear')
+# Find all hours with available data
+hrs = {}
+num_hours_per_date = {}
+for date in pd.date_range(start='2016-1-1', end='2017-1-1', freq='D'):
+    hrs[date] = avail_hours(date.year, date.month, date.day)
+    num_hours_per_date[date] = len(hrs[date])
+ 
+with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/available_days.pkl', 'wb') as file:
+    pickle.dump(hrs, file)
+    pickle.dump(num_hours_per_date, file)
 
 #%% Loop through all hours
-# Load weather data
-months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-days_per_month = [31,29,31,30,31,30,31,31,30,31,30,31]
-hours_per_month = days_per_month * 60 # h indexing
-total_hours = sum(hours_per_month)
-
-str1 = "C:\\Users\\vinee\\OneDrive - Massachusetts Institute of Technology\\MIT\\Semesters\\Spring 2022\\15.S08\\Project\\weather_data_"
+str1 = "/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/weather_data_"
 str2 = "2016.pkl"
 
-dlr_values = np.zeros(num_branches,total_hours)
+with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/branch_weather.pkl', 'rb') as file:
+        branch_weather_indices = pickle.load(file)
+        branch_weather_points = pickle.load(file)
+
+with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/available_days.pkl', 'rb') as file:
+        hrs = pickle.load(file)
+        num_hours_per_date = pickle.load(file)
+
+# ERCOT TDSP ampacity assumptions
+T_A_SLR_vals = [36, 25, 25,	40.55, 40, 40.55, 40, 25, 40, 25, 40, 43]
+T_C_vals = [67.5, 67.5, 75, 93.33, 90, 67.5, 90, 67.5, 85, 67.5, 90, 75]
+
+# DLR calculation parameters
+v_SLR = 0.6096 # [m/s]
+T_A_SLR = mean(T_A_SLR_vals) # [C]
+T_A_SLR = T_A_SLR + 273.15 # [K]
+T_C_max = mean(T_C_vals) # [C]
+T_C_max = T_C_max + 273.15 # [K]
+# D = 25.4 * 1e-3 # mean diameter
+
+alpha = v_SLR**(-0.26)
+rho_f = 1.029  # Density of air (kg/m^3)
+mu_f = 2.043 * 1e-5 # Dynamic viscosity of air [kg/m-s]
+beta = (0.559/(v_SLR**0.26))*(rho_f/mu_f)**0.04
+gamma = math.sqrt(1/(T_C_max - T_A_SLR))
+
+branches['fromKV'] = buses.reindex(branches.from_bus_id)['baseKV'].values
+branches['toKV']   = buses.reindex(branches.to_bus_id)['baseKV'].values
+
+unique_weather_data = {}
+num_unique_weather = np.zeros(num_branches)
+branch_diameters = np.zeros(num_branches)
+conductor_axes = np.zeros(num_branches)
+
+# Preprocessing all branches
+for i in range(num_branches):
+    unique_weather_data[i] = list(set(branch_weather_indices[i]))
+    num_unique_weather[i] = int(len(unique_weather_data[i]))
+    current_rating = (branches['rateA'].iloc[i]*1000)/(math.sqrt(3)*branches['fromKV'].iloc[i])
+    # Cap maximum conductor diameter at 1.88 in
+    branch_diameters[i] = (min(0.001*current_rating + 0.2182,1.88)*0.0254) # [m]
+    conductor_axes[i] = conductor_axis(branches,i)
+
+#%%
+dlr_values = np.ones((num_branches,total_hours))
+dlr_values_temp = np.ones((num_branches,total_hours))
+dlr_values_wind = np.ones((num_branches,total_hours))
+
+hrs_for_each_date_indexed = list(hrs.values())
+
+global_h = 0 # global hour counter
+global_d = 0 # global day counter
 
 for i in range(len(months)):
-    file_name = str1 + months[i] + str2
+    print('Month: ', months[i])
+    weather_data_file = str1 + months[i] + str2
 
-    with open(file_name, 'wb') as file:
-            x_orig_all = pickle.load(file)
-            y_orig_all = pickle.load(file)
-            temp_all = pickle.load(file)
-            u_all = pickle.load(file)
-            v_all = pickle.load(file)
-            times = pickle.load(file)
+    with open(weather_data_file, 'rb') as file:
+        x_orig = pickle.load(file)
+        y_orig = pickle.load(file)
+        temp_all = pickle.load(file)
+        u_all = pickle.load(file)
+        v_all = pickle.load(file)
+    
+    month_h = 0
 
-    weather_points = merge(x_orig_all,y_orig_all)
+    for j in range(days_per_month[i]):
+        print('Day: ',str(j))
+        start = time.time()
 
-    d = 100 # units in km?
+        for k in range(24):
 
-    for i in range(num_branches):
-        branch_sample_points = sample_points(branches.fromX,branches.fromY,branches.toX,branches.toY,d)
-        weather_indices = [closest_point(pt,weather_points)[0] for pt in branch_sample_points]
-        weather_points = [closest_point(pt,weather_points)[1] for pt in branch_sample_points]
-        u = u_all
+            if k in hrs_for_each_date_indexed[global_d]:
+
+                temp_month = temp_all[month_h].ravel()
+                u_month = u_all[month_h].ravel()
+                v_month = v_all[month_h].ravel()
+
+                for l in range(num_branches):
+
+                    if branches.branch_device_type.iloc[l] == 'Transformer':
+                        dlr_values[l,global_h] = 1.0
+                        continue
+
+                    num_unique = int(num_unique_weather[l])
+                    dlrs = np.zeros(num_unique)
+                    dlrs_wind = np.zeros(num_unique)
+                    dlrs_temp = np.zeros(num_unique)
+
+                    for m in range(num_unique):
+
+                        n = unique_weather_data[l][m]
+                        temp = temp_month[n].magnitude
+                        u = u_month[n].magnitude
+                        v = v_month[n].magnitude
+                        speed = math.sqrt(u**2 + v**2)
+                        phi = wind_dir(u,v) - conductor_axes[l]
+                        K_angle = 1.194 - math.cos(phi) + 0.194*math.cos(2*phi) + 0.368*math.sin(2*phi)
+                        eta_low_v = alpha * K_angle * speed**0.26
+                        eta_high_v = beta * branch_diameters[l]**(0.04) * speed**0.3
+                        eta_T = gamma*(T_C_max - temp)**0.5
+                        # Not capped version: May be cases where DLR < SLR
+                        dlrs[m] = max(eta_low_v*eta_T,eta_high_v*eta_T)
+                        dlrs_wind[m] = max(eta_low_v,eta_high_v)
+                        dlrs_temp[m] = eta_T
+                        # Capped version
+                        # dlrs[m] = max(1,eta_low_v*eta_T,eta_high_v*eta_T) 
+
+                    dlr_values[l,global_h] = min(dlrs)
+                    dlr_values_temp[l,global_h] = min(dlrs_temp)
+                    dlr_values_wind[l,global_h] = min(dlrs_wind)
+
+                month_h += 1
+
+            global_h += 1
+
+        global_d += 1
+        end = time.time()
+        print('Time: ', end - start)
+
+#%%
+with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/dlr_vals_capped.pkl', 'wb') as file:
+    pickle.dump(dlr_values, file)
+    pickle.dump(dlr_values_temp, file)
+    pickle.dump(dlr_values_wind, file)
+
+# with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/dlr_vals_not_capped.pkl', 'wb') as file:
+#     pickle.dump(dlr_values, file)
+# %%
