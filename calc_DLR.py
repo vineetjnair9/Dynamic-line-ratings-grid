@@ -17,6 +17,7 @@ from bs4 import BeautifulSoup
 
 from scipy.spatial.distance import cdist
 
+#%%
 grid = Grid(["Texas"])
 
 buses = grid.bus
@@ -310,11 +311,7 @@ for i in range(len(months)):
         print('Time: ', end - start)
 
 #%%
-with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/dlr_vals_capped.pkl', 'wb') as file:
+with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/dlr_vals_notcapped.pkl', 'wb') as file:
     pickle.dump(dlr_values, file)
     pickle.dump(dlr_values_temp, file)
     pickle.dump(dlr_values_wind, file)
-
-# with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/dlr_vals_not_capped.pkl', 'wb') as file:
-#     pickle.dump(dlr_values, file)
-# %%
