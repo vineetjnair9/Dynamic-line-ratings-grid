@@ -202,7 +202,7 @@ with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTe
 T_A_SLR_vals = [36, 25, 25,	40.55, 40, 40.55, 40, 25, 40, 25, 40, 43]
 T_C_vals = [67.5, 67.5, 75, 93.33, 90, 67.5, 90, 67.5, 85, 67.5, 90, 75]
 
-# DLR calculation parameters
+# DLR calculation parameters - ASSUMPTIONS
 v_SLR = 0.6096 # [m/s]
 T_A_SLR = mean(T_A_SLR_vals) # [C]
 T_A_SLR = T_A_SLR + 273.15 # [K]

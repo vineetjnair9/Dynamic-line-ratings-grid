@@ -58,6 +58,11 @@ dlr_less = dlr_values < 1.0
 # % of hours and branches for which DLR falls below SLR
 dlr_less_fraction = (np.count_nonzero(dlr_less)/(num_branches*num_hours)) * 100
 
+# Find indices (hour + branch) for which DLR < SLR
+dlr_less_indices = np.nonzero(dlr_less)
+dlr_less_branches = dlr_less_indices[0]
+dlr_less_hours = dlr_less_indices[1]
+
 # Summary statistics
 dlr_median_val = np.median(dlr_values)
 dlr_mean_val = np.mean(dlr_values)
