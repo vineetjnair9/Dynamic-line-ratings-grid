@@ -6,10 +6,18 @@ import seaborn as sns
 from powersimdata.input.grid import Grid
 import matplotlib.pyplot as plt
 
-with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/dlr_vals_notcapped.pkl', 'rb') as file:
-    dlr_values = pickle.load(file)
-    dlr_values_temp = pickle.load(file)
-    dlr_values_wind = pickle.load(file)
+personal = 0
+
+if personal:
+    with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/dlr_vals_notcapped.pkl', 'rb') as file:
+        dlr_values = pickle.load(file)
+        dlr_values_temp = pickle.load(file)
+        dlr_values_wind = pickle.load(file)
+else:
+    with open('/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped.pkl', 'rb') as file:
+        dlr_values = pickle.load(file)
+        dlr_values_temp = pickle.load(file)
+        dlr_values_wind = pickle.load(file)
 
 grid = Grid(["Texas"])
 branches = grid.branch
