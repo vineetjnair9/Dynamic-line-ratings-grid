@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 def calc_Bmatrix(buses,branches):
+    branches['bus_number'] 
     N = buses.shape[0] # no. of buses
     B = np.zeros((N,N))
     for i in range(N): # Loop through each bus
