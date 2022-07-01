@@ -233,6 +233,12 @@ for i in range(num_branches):
     branch_diameters[i] = (min(0.001*current_rating + 0.2182,1.88)*0.0254) # [m]
     conductor_axes[i] = conductor_axis(branches,i)
 
+#%% Calculate lengths of all lines [in km]
+# Filter out short & medium lines (<= 100km) - only apply DLR to those
+branches['line_length'] = np.sqrt((branches.toX - branches.fromX) ** 2 + (branches.toY - branches.fromY) ** 2)/1000.0
+
+short_med_branches = branches[branches['line_length'] <= 100.0]
+
 #%%
 dlr_values = np.ones((num_branches,total_hours))
 dlr_values_temp = np.ones((num_branches,total_hours))
