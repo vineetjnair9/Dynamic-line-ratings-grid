@@ -41,6 +41,7 @@ plt.ylabel('Hour')
 plt.title('DLR factors using both wind velocity and temperature')
 plt.savefig('DLR_dist_all.png',dpi=600)
 plt.colorbar()
+#TODO: try plotting with higher DPI/resolution
 
 #%% Distribution of DLR factors using temp only
 plt.contour(XX, YY, dlr_values_temp, cmap='coolwarm');
