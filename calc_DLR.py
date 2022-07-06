@@ -18,6 +18,17 @@ from bs4 import BeautifulSoup
 from scipy.spatial.distance import cdist
 
 #%%
+personal = 0
+
+if personal:
+    branch_weather_points_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/branch_weather.pkl'
+    available_days_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/available_days.pkl'
+    str1 = "/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/weather_data_"
+else:
+    branch_weather_points_path = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/branch_weather.pkl'
+    available_days_path = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/available_days.pkl'
+    str1 = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/weather_data_'
+
 grid = Grid(["Texas"])
 
 buses = grid.bus
@@ -187,14 +198,13 @@ with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTe
     pickle.dump(num_hours_per_date, file)
 
 #%% Loop through all hours
-str1 = "/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/weather_data_"
 str2 = "2016.pkl"
 
-with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/branch_weather.pkl', 'rb') as file:
+with open(branch_weather_points_path, 'rb') as file:
         branch_weather_indices = pickle.load(file)
         branch_weather_points = pickle.load(file)
 
-with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/available_days.pkl', 'rb') as file:
+with open(available_days_path, 'rb') as file:
         hrs = pickle.load(file)
         num_hours_per_date = pickle.load(file)
 
@@ -207,6 +217,7 @@ v_SLR = 0.6096 # [m/s]
 T_A_SLR = mean(T_A_SLR_vals) # [C]
 T_A_SLR = T_A_SLR + 273.15 # [K]
 T_C_max = mean(T_C_vals) # [C]
+T_C_max = 100 # [C] more conservative & >> T_A
 T_C_max = T_C_max + 273.15 # [K]
 # D = 25.4 * 1e-3 # mean diameter
 
