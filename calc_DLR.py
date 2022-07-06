@@ -18,17 +18,20 @@ from bs4 import BeautifulSoup
 from scipy.spatial.distance import cdist
 
 #%%
-personal = 0
+personal = 1
 
 if personal:
-    branch_weather_points_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/branch_weather.pkl'
-    available_days_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/available_days.pkl'
-    str1 = "/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/weather_data_"
-else:
+    branch_weather_points_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/branch_weather.pkl'
+    available_days_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/available_days.pkl'
+    str1 = "/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/weather_data_"
+    results_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_conservative.pkl'
+else: # NREL laptop
     branch_weather_points_path = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/branch_weather.pkl'
     available_days_path = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/available_days.pkl'
     str1 = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/weather_data_'
+    results_path = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_conservative.pkl'
 
+str2 = "2016.pkl"
 grid = Grid(["Texas"])
 
 buses = grid.bus
@@ -134,14 +137,14 @@ branch_weather_indices = {}
 
 mac = True
 if mac:
-    file_path1 = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/weather_data_Jan2016.pkl'
+    file_path1 = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/weather_data_Jan2016.pkl'
 else:
-    file_path1 = "C:\\Users\\vinee\\OneDrive - Massachusetts Institute of Technology\\MIT\\Semesters\\Spring 2022\\15.S08\\Project\\weather_data_Jan2016.pkl"
+    file_path1 = "C:\\Users\\vinee\\OneDrive - Massachusetts Institute of Technology\\MIT\\Semesters\\Spring 2022\\15.S08\\DLR Project\\weather_data_Jan2016.pkl"
 
 if mac:
-    file_path2 = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/lat_lon_data.pkl'
+    file_path2 = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/lat_lon_data.pkl'
 else:
-    file_path2 = "C:\\Users\\vinee\\OneDrive - Massachusetts Institute of Technology\\MIT\\Semesters\\Spring 2022\\15.S08\\Project\\lat_lon_data.pkl"
+    file_path2 = "C:\\Users\\vinee\\OneDrive - Massachusetts Institute of Technology\\MIT\\Semesters\\Spring 2022\\15.S08\\DLR Project\\lat_lon_data.pkl"
 
 with open(file_path1, 'rb') as file:
         x_orig_all = pickle.load(file)
@@ -198,7 +201,6 @@ with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTe
     pickle.dump(num_hours_per_date, file)
 
 #%% Loop through all hours
-str2 = "2016.pkl"
 
 with open(branch_weather_points_path, 'rb') as file:
         branch_weather_indices = pickle.load(file)
@@ -243,12 +245,6 @@ for i in range(num_branches):
     # Cap maximum conductor diameter at 1.88 in
     branch_diameters[i] = (min(0.001*current_rating + 0.2182,1.88)*0.0254) # [m]
     conductor_axes[i] = conductor_axis(branches,i)
-
-#%% Calculate lengths of all lines [in km]
-# Filter out short & medium lines (<= 100km) - only apply DLR to those
-branches['line_length'] = np.sqrt((branches.toX - branches.fromX) ** 2 + (branches.toY - branches.fromY) ** 2)/1000.0
-
-short_med_branches = branches[branches['line_length'] <= 100.0]
 
 #%%
 dlr_values = np.ones((num_branches,total_hours))
@@ -328,7 +324,15 @@ for i in range(len(months)):
         print('Time: ', end - start)
 
 #%%
-with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/dlr_vals_notcapped.pkl', 'wb') as file:
+with open(results_path, 'wb') as file:
     pickle.dump(dlr_values, file)
     pickle.dump(dlr_values_temp, file)
     pickle.dump(dlr_values_wind, file)
+
+#%% Calculate lengths of all lines [in km]
+# Filter out short & medium lines (<= 100km) - only apply DLR to those
+branches['line_length'] = np.sqrt((branches.toX - branches.fromX) ** 2 + (branches.toY - branches.fromY) ** 2)/1000.0
+
+short_med_branches = branches[branches['line_length'] <= 100.0]
+
+# Find absolute branch indices corresponding to short/medium branch IDs
