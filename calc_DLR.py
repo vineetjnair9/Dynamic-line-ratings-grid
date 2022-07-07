@@ -24,12 +24,12 @@ if personal:
     branch_weather_points_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/branch_weather.pkl'
     available_days_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/available_days.pkl'
     str1 = "/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/weather_data_"
-    results_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_conservative.pkl'
+    results_path = '/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_orig.pkl'
 else: # NREL laptop
     branch_weather_points_path = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/branch_weather.pkl'
     available_days_path = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/available_days.pkl'
     str1 = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/weather_data_'
-    results_path = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_conservative.pkl'
+    results_path = '/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_orig.pkl'
 
 str2 = "2016.pkl"
 grid = Grid(["Texas"])
@@ -126,7 +126,7 @@ def avail_hours(Y, M, D):
 
 # Load weather data
 months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-days_per_month = [31,29,31,30,31,30,31,31,30,31,30,32]
+days_per_month = [31,29,31,30,31,30,31,31,30,31,30,31]
 hours_per_month = days_per_month * 24 # h indexing
 total_hours = sum(hours_per_month)
 
@@ -189,10 +189,10 @@ with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTe
     pickle.dump(branch_weather_indices, file)
     pickle.dump(branch_weather_points, file)
 
-# Find all hours with available data
+#%% Find all hours with available data
 hrs = {}
 num_hours_per_date = {}
-for date in pd.date_range(start='2016-1-1', end='2017-1-1', freq='D'):
+for date in pd.date_range(start='2016-1-1', end='2016-12-31', freq='D'):
     hrs[date] = avail_hours(date.year, date.month, date.day)
     num_hours_per_date[date] = len(hrs[date])
  
@@ -219,14 +219,14 @@ v_SLR = 0.6096 # [m/s]
 T_A_SLR = mean(T_A_SLR_vals) # [C]
 T_A_SLR = T_A_SLR + 273.15 # [K]
 T_C_max = mean(T_C_vals) # [C]
-T_C_max = 100 # [C] more conservative & >> T_A
+# T_C_max = 100 # [C] more conservative & >> T_A
 T_C_max = T_C_max + 273.15 # [K]
 # D = 25.4 * 1e-3 # mean diameter
 
 alpha = v_SLR**(-0.26)
 rho_f = 1.029  # Density of air (kg/m^3)
 mu_f = 2.043 * 1e-5 # Dynamic viscosity of air [kg/m-s]
-beta = (0.559/(v_SLR**0.26))*(rho_f/mu_f)**0.04
+beta = (0.566/(v_SLR**0.26))*(rho_f/mu_f)**0.04
 gamma = math.sqrt(1/(T_C_max - T_A_SLR))
 
 branches['fromKV'] = buses.reindex(branches.from_bus_id)['baseKV'].values
@@ -302,7 +302,7 @@ for i in range(len(months)):
                         phi = wind_dir(u,v) - conductor_axes[l]
                         K_angle = 1.194 - math.cos(phi) + 0.194*math.cos(2*phi) + 0.368*math.sin(2*phi)
                         eta_low_v = alpha * K_angle * speed**0.26
-                        eta_high_v = beta * branch_diameters[l]**(0.04) * speed**0.3
+                        eta_high_v = beta * K_angle * branch_diameters[l]**(0.04) * speed**0.3
                         eta_T = gamma*(T_C_max - temp)**0.5
                         # Not capped version: May be cases where DLR < SLR
                         dlrs[m] = max(eta_low_v*eta_T,eta_high_v*eta_T)

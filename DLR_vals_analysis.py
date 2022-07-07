@@ -6,7 +6,7 @@ import seaborn as sns
 from powersimdata.input.grid import Grid
 import matplotlib.pyplot as plt
 
-personal = 0
+personal = 1
 
 if personal:
     with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped.pkl', 'rb') as file:
