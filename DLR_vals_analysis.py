@@ -9,20 +9,64 @@ import matplotlib.pyplot as plt
 personal = 1
 
 if personal:
-    with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped.pkl', 'rb') as file:
-        dlr_values = pickle.load(file)
-        dlr_values_temp = pickle.load(file)
-        dlr_values_wind = pickle.load(file)
+    with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_orig.pkl', 'rb') as file:
+        dlr_values_orig = pickle.load(file)
+        dlr_values_temp_orig = pickle.load(file)
+        dlr_values_wind_orig = pickle.load(file)
 else:
-    with open('/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped.pkl', 'rb') as file:
-        dlr_values = pickle.load(file)
-        dlr_values_temp = pickle.load(file)
-        dlr_values_wind = pickle.load(file)
+    with open('/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_orig.pkl', 'rb') as file:
+        dlr_values_orig = pickle.load(file)
+        dlr_values_temp_orig = pickle.load(file)
+        dlr_values_wind_orig = pickle.load(file)
+
+if personal:
+    with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_v1.pkl', 'rb') as file:
+        dlr_values_v1 = pickle.load(file)
+        dlr_values_temp_v1 = pickle.load(file)
+        dlr_values_wind_v1 = pickle.load(file)
+else:
+    with open('/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_v1.pkl', 'rb') as file:
+        dlr_values_v1 = pickle.load(file)
+        dlr_values_temp_v1 = pickle.load(file)
+        dlr_values_wind_v1 = pickle.load(file)
+
+if personal:
+    with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_v2.pkl', 'rb') as file:
+        dlr_values_v2 = pickle.load(file)
+        dlr_values_temp_v2 = pickle.load(file)
+        dlr_values_wind_v2 = pickle.load(file)
+else:
+    with open('/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_v2.pkl', 'rb') as file:
+        dlr_values_v2 = pickle.load(file)
+        dlr_values_temp_v2 = pickle.load(file)
+        dlr_values_wind_v2 = pickle.load(file)
+
+if personal:
+    with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_v3.pkl', 'rb') as file:
+        dlr_values_v3 = pickle.load(file)
+        dlr_values_temp_v3 = pickle.load(file)
+        dlr_values_wind_v3 = pickle.load(file)
+else:
+    with open('/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_v3.pkl', 'rb') as file:
+        dlr_values_v3 = pickle.load(file)
+        dlr_values_temp_v3 = pickle.load(file)
+        dlr_values_wind_v3 = pickle.load(file)
+
+if personal:
+    with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_v4.pkl', 'rb') as file:
+        dlr_values_v4 = pickle.load(file)
+        dlr_values_temp_v4 = pickle.load(file)
+        dlr_values_wind_v4 = pickle.load(file)
+else:
+    with open('/Users/vjagadee/OneDrive - Massachusetts Institute of Technology/MIT/Semesters/Spring 2022/15.S08/DLR Project/dlr_vals_notcapped_v4.pkl', 'rb') as file:
+        dlr_values_v4 = pickle.load(file)
+        dlr_values_temp_v4 = pickle.load(file)
+        dlr_values_wind_v4 = pickle.load(file)
 
 grid = Grid(["Texas"])
 branches = grid.branch
 num_branches = branches.shape[0]
-num_hours = dlr_values.shape[1]
+num_hours = dlr_values_orig.shape[1]
 
 #%%
 X = range(1,num_branches+1)

@@ -185,7 +185,7 @@ for i in range(num_branches):
     branch_weather_points[i] = [closest_point(pt, weather_points)[1] for pt in branch_sample_points]
 
 #
-with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/branch_weather.pkl', 'wb') as file:
+with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/branch_weather.pkl', 'wb') as file:
     pickle.dump(branch_weather_indices, file)
     pickle.dump(branch_weather_points, file)
 
@@ -196,7 +196,7 @@ for date in pd.date_range(start='2016-1-1', end='2016-12-31', freq='D'):
     hrs[date] = avail_hours(date.year, date.month, date.day)
     num_hours_per_date[date] = len(hrs[date])
  
-with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/Project/available_days.pkl', 'wb') as file:
+with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/available_days.pkl', 'wb') as file:
     pickle.dump(hrs, file)
     pickle.dump(num_hours_per_date, file)
 
