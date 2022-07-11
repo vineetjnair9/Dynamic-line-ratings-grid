@@ -47,8 +47,8 @@ K_SLR_vals = [K_angle(0.0), K_angle(math.pi/4.0), K_angle(math.pi/2.0)]
 SLR_wind_angle = [0, 45, 90]
 
 #%%
-TC_case = 0
-KSLR_case = 0 
+TC_case = 1
+KSLR_case = 2
 
 T_C_max = T_C_max_vals[TC_case] # [C]
 T_C_max_str = str(T_C_max)
@@ -83,6 +83,9 @@ short_med_branch_indices = np.where(branches['line_length'] <= 100.0)[0]
 dlr_values_filter_shortmed = dlr_values_filter[short_med_branch_indices,:]
 dlr_values_temp_filter_shortmed = dlr_values_temp_filter[short_med_branch_indices,:]
 dlr_values_wind_filter_shortmed = dlr_values_wind_filter[short_med_branch_indices,:]
+
+with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/short_med_branch_indices.pkl', 'wb') as file:
+    pickle.dump(short_med_branch_indices, file)
 
 #%%
 # X = range(short_med_branches.shape[0]) # range(num_branches)
