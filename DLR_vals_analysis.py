@@ -47,8 +47,8 @@ K_SLR_vals = [K_angle(0.0), K_angle(math.pi/4.0), K_angle(math.pi/2.0)]
 SLR_wind_angle = [0, 45, 90]
 
 #%%
-TC_case = 1
-KSLR_case = 2
+TC_case = 0
+KSLR_case = 0
 
 T_C_max = T_C_max_vals[TC_case] # [C]
 T_C_max_str = str(T_C_max)
