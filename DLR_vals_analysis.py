@@ -10,13 +10,18 @@ import math
 from pathlib import Path
 from statistics import mean
 import matplotlib.colors
-from scipy.interpolate import make_interp_spline
 import utm
 from scipy.ndimage.filters import gaussian_filter1d
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 def K_angle(phi):
     phi = angles.normalize(phi,-math.pi/2.0, math.pi/2.0)
     return 1.194 - math.cos(phi) + 0.194*math.cos(2*phi) + 0.368*math.sin(2*phi)
+
+def moving_average(x, w): # x = data, w = window
+    return np.convolve(x, np.ones(w), 'valid') / w
+
+def 
 
 personal = 1
 
@@ -207,9 +212,14 @@ img_name = '_DLR_total_overtime.png'
 filename = case_name + img_name
 plt.savefig(plots_path / filename,dpi=600)
 
-# %%
-# Smoothing data
+#%%
+# Smoothing data - with 1D Gaussian filter
 sigma = 30
+Total_capacity_dlr_smoothed = gaussian_filter1d(Total_capacity_dlr,sigma=sigma)
+Total_capacity_dlr_temp_smoothed = gaussian_filter1d(Total_capacity_dlr_temp,sigma=sigma)
+Total_capacity_dlr_wind_smoothed = gaussian_filter1d(Total_capacity_dlr_wind,sigma=sigma)
+
+#%% Smoothing data - with simple moving average
 Total_capacity_dlr_smoothed = gaussian_filter1d(Total_capacity_dlr,sigma=sigma)
 Total_capacity_dlr_temp_smoothed = gaussian_filter1d(Total_capacity_dlr_temp,sigma=sigma)
 Total_capacity_dlr_wind_smoothed = gaussian_filter1d(Total_capacity_dlr_wind,sigma=sigma)
