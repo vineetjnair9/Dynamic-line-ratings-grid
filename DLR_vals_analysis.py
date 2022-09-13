@@ -93,6 +93,7 @@ times = times = pd.timedelta_range(start='1 day', end='366 days', periods=8784)
 dlr_values_df = pd.DataFrame(dlr_values.T,index=times).interpolate(method='time')
 dlr_values_temp_df = pd.DataFrame(dlr_values_temp.T,index=times).interpolate(method='time')
 dlr_values_wind_df = pd.DataFrame(dlr_values_wind.T,index=times).interpolate(method='time')
+
 # change back to numpy array
 dlr_values_filter = dlr_values_df.to_numpy().T
 dlr_values_temp_filter = dlr_values_temp_df.to_numpy().T
@@ -102,11 +103,12 @@ dlr_values_wind_filter = dlr_values_wind_df.to_numpy().T
 # Filter out short & medium lines (<= 100km) - only apply DLR to those
 branches['line_length'] = np.sqrt((branches.toX - branches.fromX) ** 2 + (branches.toY - branches.fromY) ** 2)/1000.0
 
-short_med_branches = branches[branches['line_length'] <= 100.0]
-long_branches = branches[branches['line_length'] > 100.0]
+# short_med_branches = branches[branches['line_length'] <= 100.0]
+short_med_branches = branches[(branches['line_length'] <= 100.0) & (branches['branch_device_type'] != 'Transformer')]
+long_transformer_branches = branches[(branches['line_length'] > 100.0) | (branches['branch_device_type'] == 'Transformer')]
 
 # Find absolute branch indices corresponding to short/medium branch IDs
-short_med_branch_indices = np.where(branches['line_length'] <= 100.0)[0]
+short_med_branch_indices = np.where((branches['line_length'] <= 100.0) & (branches['branch_device_type'] != 'Transformer'))[0]
 
 dlr_values_filter_shortmed = dlr_values_filter[short_med_branch_indices,:]
 dlr_values_temp_filter_shortmed = dlr_values_temp_filter[short_med_branch_indices,:]
@@ -114,6 +116,24 @@ dlr_values_wind_filter_shortmed = dlr_values_wind_filter[short_med_branch_indice
 
 # with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/short_med_branch_indices.pkl', 'wb') as file:
 #     pickle.dump(short_med_branch_indices, file)
+
+#%% Line type analysis
+short_med_branches = branches[(branches['line_length'] <= 100.0) & (branches['branch_device_type'] != 'Transformer')]
+short_med_branches_pct = (short_med_branches.shape[0]/branches.shape[0])*100.0
+
+long_branch_indices = np.where((branches['line_length'] > 100.0) & (branches['branch_device_type'] != 'Transformer'))[0]
+long_branches = branches[(branches['line_length'] > 100.0) & (branches['branch_device_type'] != 'Transformer')]
+dlr_values_filter_long = dlr_values_filter[long_branch_indices,:]
+dlr_values_temp_filter_long = dlr_values_temp_filter[long_branch_indices,:]
+dlr_values_wind_filter_long = dlr_values_wind_filter[long_branch_indices,:]
+slr_rateA_long = long_branches['rateA'].to_numpy().T.reshape(1,-1)
+aar_rateA_long = dlr_values_temp_filter_long.T * slr_rateA_long
+dlr_rateA_long = aar_rateA_long * np.maximum(dlr_values_wind_filter_long.T,1.0)
+
+with open('/Users/vinee/Library/CloudStorage/OneDrive-MassachusettsInstituteofTechnology/MIT/Semesters/Spring 2022/15.S08/DLR Project/long_branches.pkl', 'wb') as file:
+    pickle.dump(slr_rateA_long, file)
+    pickle.dump(aar_rateA_long, file)
+    pickle.dump(dlr_rateA_long, file)
 
 #%%
 # X = range(short_med_branches.shape[0]) # range(num_branches)
@@ -214,12 +234,18 @@ dlr_min_val = np.min(dlr_values)
 dlr_max_val = np.max(dlr_values)
 
 #%% Total capacity of all branches over time 
-# Include long lines in total capacity but don't apply DLR to them
+# Include long lines/transformers in total capacity but don't apply DLR to them
 ratings = short_med_branches['rateA'].to_numpy()
 Total_capacity_slr = np.sum(branches['rateA'])*np.ones((num_hours,1)).flatten()
-Total_capacity_dlr = np.dot(dlr_values_filter_shortmed.T,ratings) + np.sum(long_branches['rateA'])
-Total_capacity_dlr_temp = np.dot(dlr_values_temp_filter_shortmed.T,ratings) + np.sum(long_branches['rateA'])
-Total_capacity_dlr_wind = np.dot(dlr_values_wind_filter_shortmed.T,ratings) + np.sum(long_branches['rateA'])
+Total_capacity_dlr = np.dot(dlr_values_filter_shortmed.T,ratings) + np.sum(long_transformer_branches['rateA'])
+Total_capacity_dlr_temp = np.dot(dlr_values_temp_filter_shortmed.T,ratings) + np.sum(long_transformer_branches['rateA'])
+Total_capacity_dlr_wind = np.dot(dlr_values_wind_filter_shortmed.T,ratings) + np.sum(long_transformer_branches['rateA'])
+
+#%% Hour-to-hour standard deviations in total capacity
+std_slr = np.std(Total_capacity_slr)
+std_dlr = np.std(Total_capacity_dlr)
+std_dlr_temp = np.std(Total_capacity_dlr_temp)
+std_dlr_wind = np.std(Total_capacity_dlr_wind)
 
 #%%
 fig, ax = plt.subplots()
@@ -279,6 +305,7 @@ img_name = '_DLR_total_overtime_smoothed.png'
 filename = case_name + img_name
 plt.tight_layout()
 ax.legend(loc='best',fontsize=10)
+ax.set_ylim([0, 3.0])
 plt.savefig(plots_path / filename,dpi=600)
 plt.show()
 
@@ -472,5 +499,3 @@ for TC_case in [0,1,2]:
         dlr_branch_avg[TC_case,KSLR_case,:] = np.mean(dlr_values_filter_shortmed,axis=0)
         means[TC_case,KSLR_case] = np.mean(dlr_branch_avg[TC_case,KSLR_case,:])
         medians[TC_case,KSLR_case] = np.median(dlr_branch_avg[TC_case,KSLR_case,:])
-
-# %%
