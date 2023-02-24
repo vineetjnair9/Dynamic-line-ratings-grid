@@ -1,4 +1,8 @@
 #%% IMPORTS
+#TODO: Update to calculate steady state thermal rating using all steps of IEEE-738
+# No need to do iterative calculations, just one-time
+# Iterations until convergence only needed for calculating actual conductor temperature given current
+
 from cmath import sqrt
 from statistics import mean
 from matplotlib.font_manager import json_dump
@@ -123,6 +127,29 @@ beta = (0.566/(v_SLR**0.26))*(rho_f/mu_f)**0.04
 T_C_max_vals = [round(mean(T_C_vals)), 100.0, 110.0]
 K_SLR_vals = [K_angle(0.0), K_angle(math.pi/4.0), K_angle(math.pi/2.0)]
 SLR_wind_angle = [0, 45, 90]
+
+def calc_dlr(params,inputs):
+    temp = inputs.temp
+    u = inputs.u
+    v = inputs.v
+    conductor_axes = params.conductor_axes
+    phi = inputs
+
+    u = u_month[n].magnitude
+    v = v_month[n].magnitude
+    speed = math.sqrt(u**2 + v**2)
+    phi = wind_dir(u,v) - conductor_axes[l]
+    eta_low_v = alpha * math.sqrt(K_angle(phi)/K_SLR) * speed**0.26
+    eta_high_v = beta * math.sqrt(K_angle(phi)/K_SLR) * branch_diameters[l]**(0.04) * speed**0.3
+    eta_T = gamma*(T_C_max - temp)**0.5
+    # Not capped version: May be cases where DLR < SLR
+    dlrs[m] = max(eta_low_v*eta_T,eta_high_v*eta_T)
+    dlrs_wind[m] = max(eta_low_v,eta_high_v)
+    dlrs_temp[m] = eta_T 
+
+dlr_values[l,global_h] = min(dlrs)
+dlr_values_temp[l,global_h] = min(dlrs_temp)
+dlr_values_wind[l,global_h] = min(dlrs_wind)
 
 #%% Loop over all cases
 
